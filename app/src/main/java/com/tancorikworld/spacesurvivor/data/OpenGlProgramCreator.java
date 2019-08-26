@@ -12,38 +12,44 @@ import androidx.annotation.NonNull;
  */
 public class OpenGlProgramCreator {
 
-    private static final String SIMPLE_VERTEX_SHADER_CONTEXT = "uniform mat4 uMVPMatrix;\n" +
-            "attribute vec4 a_Position;\n" +
+    public static final String ATTRIBUTE_VERTEX_POSITION_NAME = "a_Position";
+    public static final String ATTRIBUTE_VERTEX_TEXTURE_NAME = "a_Texture";
+    public static final String FRAGMENT_TEXTURE_UNIT_NAME = "u_TextureUnit";
+    public static final String VERTEX_MATRIX_NAME = "u_Matrix";
+    public static final String FRAGMENT_COLOR_NAME = "u_Color";
+
+    private static final String SIMPLE_VERTEX_SHADER_CONTEXT = "uniform mat4 " + VERTEX_MATRIX_NAME + ";\n" +
+            "attribute vec4 " + ATTRIBUTE_VERTEX_POSITION_NAME + ";\n" +
             "\n" +
             "void main() {\n" +
-            "    gl_Position = uMVPMatrix * a_Position;\n" +
+            "    gl_Position = " + VERTEX_MATRIX_NAME + " * " + ATTRIBUTE_VERTEX_POSITION_NAME + ";\n" +
             "}";
 
     private static final String SIMPLE_FRAGMENT_SHADER_CONTEXT = "precision mediump float;\n" +
-            "uniform vec4 u_Color;\n" +
+            "uniform vec4 " + FRAGMENT_COLOR_NAME + ";\n" +
             "\n" +
             "void main() {\n" +
-            "    gl_FragColor = u_Color;\n" +
+            "    gl_FragColor = " + FRAGMENT_COLOR_NAME + ";\n" +
             "}";
 
-    private static final String TEXTURED_VERTEX_SHADER_CONTEXT = "attribute vec4 a_Position;\n" +
-            "uniform mat4 u_Matrix;\n" +
-            "attribute vec2 a_Texture;\n" +
+    private static final String TEXTURED_VERTEX_SHADER_CONTEXT = "attribute vec4 " + ATTRIBUTE_VERTEX_POSITION_NAME + ";\n" +
+            "uniform mat4 "+ VERTEX_MATRIX_NAME +";\n" +
+            "attribute vec2 "+ ATTRIBUTE_VERTEX_TEXTURE_NAME + ";\n" +
             "varying vec2 v_Texture;\n" +
             "\n" +
             "void main()\n" +
             "{\n" +
-            "    gl_Position = u_Matrix * a_Position;\n" +
-            "    v_Texture = a_Texture;\n" +
+            "    gl_Position = " + VERTEX_MATRIX_NAME + " * " + ATTRIBUTE_VERTEX_POSITION_NAME + ";\n" +
+            "    v_Texture = " + ATTRIBUTE_VERTEX_TEXTURE_NAME + ";\n" +
             "}";
     private static final String TEXTURED_FRAGMENT_SHADER_CONTEXT = "precision mediump float;\n" +
             "\n" +
-            "uniform sampler2D u_TextureUnit;\n" +
+            "uniform sampler2D " + FRAGMENT_TEXTURE_UNIT_NAME + ";\n" +
             "varying vec2 v_Texture;\n" +
             "\n" +
             "void main()\n" +
             "{\n" +
-            "    gl_FragColor = texture2D(u_TextureUnit, v_Texture);\n" +
+            "    gl_FragColor = texture2D(" + FRAGMENT_TEXTURE_UNIT_NAME + ", v_Texture);\n" +
             "}";
 
     /**
@@ -67,8 +73,6 @@ public class OpenGlProgramCreator {
             GLES20.glDeleteProgram(programId);
             return 0;
         }
-
-
         return programId;
     }
 
@@ -90,7 +94,8 @@ public class OpenGlProgramCreator {
         return shaderId;
     }
 
-    private @NonNull String getShaderContext(int type, boolean isTexturedShader) {
+    @NonNull
+    private String getShaderContext(int type, boolean isTexturedShader) {
         String result;
         if (GLES20.GL_VERTEX_SHADER == type) {
             result = isTexturedShader

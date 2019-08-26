@@ -6,16 +6,20 @@ import android.graphics.BitmapFactory;
 import android.opengl.GLES20;
 import android.opengl.GLUtils;
 
-import static android.opengl.GLES20.GL_TEXTURE0;
 import static android.opengl.GLES20.GL_TEXTURE_2D;
 import static android.opengl.GLES20.glActiveTexture;
 import static android.opengl.GLES20.glBindTexture;
 import static android.opengl.GLES20.glDeleteTextures;
 import static android.opengl.GLES20.glGenTextures;
 
-public class TextureUtils {
 
-    public static int loadTexture(Context context, int resourceId) {
+public final class TextureUtils {
+
+    private TextureUtils() {
+        // не создавать экземпляр
+    }
+
+    public static int loadTexture(Context context, int resourceId, int glTextureUnit) {
         // создание объекта текстуры
         final int[] textureIds = new int[1];
         glGenTextures(1, textureIds, 0);
@@ -36,7 +40,7 @@ public class TextureUtils {
         }
 
         // настройка объекта текстуры
-        glActiveTexture(GL_TEXTURE0);
+        glActiveTexture(glTextureUnit);
         glBindTexture(GL_TEXTURE_2D, textureIds[0]);
 
         GLES20.glTexParameteri(GLES20.GL_TEXTURE_2D, GLES20.GL_TEXTURE_MIN_FILTER, GLES20.GL_LINEAR);

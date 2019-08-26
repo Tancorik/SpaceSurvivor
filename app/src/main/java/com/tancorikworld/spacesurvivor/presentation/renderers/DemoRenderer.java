@@ -3,14 +3,14 @@ package com.tancorikworld.spacesurvivor.presentation.renderers;
 import android.opengl.GLES20;
 import android.opengl.GLSurfaceView;
 import android.opengl.Matrix;
-import android.os.SystemClock;
 
 import com.tancorikworld.spacesurvivor.R;
 import com.tancorikworld.spacesurvivor.application.SpaceApplication;
-import com.tancorikworld.spacesurvivor.models.DemoSimpleSquad;
-import com.tancorikworld.spacesurvivor.models.DemoTriangle;
+import com.tancorikworld.spacesurvivor.models.helpers.SimpleColor;
 import com.tancorikworld.spacesurvivor.models.helpers.TextureArea;
-import com.tancorikworld.spacesurvivor.models.primitive.Rectangle;
+import com.tancorikworld.spacesurvivor.models.primitive.ColoredFigure;
+import com.tancorikworld.spacesurvivor.models.primitive.IPrimitiveFigure;
+import com.tancorikworld.spacesurvivor.models.primitive.TexturedRectangle;
 import com.tancorikworld.spacesurvivor.utils.TextureUtils;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -18,16 +18,21 @@ import javax.microedition.khronos.opengles.GL10;
 
 public class DemoRenderer implements GLSurfaceView.Renderer {
 
+    private float mCurrentX = 100;
+    private float mCurrentY = 100;
+    private float mTargetX;
+    private float mTargetY;
+    private float mSpeed = 10;
+
     private float mRatio;
 
     private int X_ORDER = 640;
 
     private float Y_RATIO;
 
-    DemoTriangle mDemoTriangle;
-    DemoSimpleSquad mSquad;
-    Rectangle mRectangle;
-    Rectangle mRectangle2;
+    private TexturedRectangle mRectangle;
+    private TexturedRectangle mRectangle2;
+    private IPrimitiveFigure mColoredFigure;
     private int mAngle;
 
     private final float[] vPMatrix = new float[16];
@@ -38,13 +43,6 @@ public class DemoRenderer implements GLSurfaceView.Renderer {
     private volatile float mX;
     private volatile float mY;
 
-    private float[] rotationMatrix = new float[16];
-
-    public DemoRenderer() {
-
-    }
-
-
     public void setCoord(float x, float y) {
         mX = x * mRatio;
         mY = Y_RATIO - y * mRatio;
@@ -54,15 +52,20 @@ public class DemoRenderer implements GLSurfaceView.Renderer {
     public void onSurfaceCreated(GL10 gl, EGLConfig config) {
         GLES20.glClearColor(1.0f, 1.0f, 0.0f, 1.0f);
 
-        mTexture = TextureUtils.loadTexture(SpaceApplication.getAppComponent().getContext(), R.drawable.demo_box);
+        // установки для прозрачности текстуры где необходимо
+        GLES20.glBlendFunc(GLES20.GL_SRC_ALPHA, GLES20.GL_ONE_MINUS_SRC_ALPHA);
+        GLES20.glEnable(GLES20.GL_BLEND);
 
-        mDemoTriangle = new DemoTriangle(0f, 0.9f, 0f, -0.9f, 0.9f, 0f, 1.0f, 0.0f, 0f);
-        mRectangle = new Rectangle(150, 150, mTexture, new TextureArea(0.2f,0.2f, 0.8f, 0.8f),
+        // забить картинку в текстуры и получить id данной тектуры
+        mTexture = TextureUtils.loadTexture(SpaceApplication.getAppComponent().getContext(), R.drawable.demo_box, GLES20.GL_TEXTURE0);
+
+        mRectangle = new TexturedRectangle(50, 50, mTexture, GLES20.GL_TEXTURE0, new TextureArea(0f,0f, 1f, 1f),
                 SpaceApplication.getAppComponent().getProgramCreator());
-        mRectangle2 = new Rectangle(50, 50, mTexture, new TextureArea(0f,0f, 0.5f, 0.5f),
+        mRectangle2 = new TexturedRectangle(50, 50, mTexture, GLES20.GL_TEXTURE0, new TextureArea(0f,0f, 0.5f, 0.5f),
                 SpaceApplication.getAppComponent().getProgramCreator());
 
-        // mSquad = new DemoSimpleSquad(-0f, -0f, 200f, 200f, 1f, 0, 0);
+        mColoredFigure = new ColoredFigure(10, 48, new SimpleColor(1f, 0f, 0f),
+                SpaceApplication.getAppComponent().getProgramCreator());
     }
 
     @Override
@@ -71,38 +74,48 @@ public class DemoRenderer implements GLSurfaceView.Renderer {
 
         mRatio = (float) X_ORDER/width;
         Y_RATIO = X_ORDER * (float) height / width;
-        // float phoneRatio = X_ORDER * (float) height / width;
 
-        // Matrix.frustumM(projectionMatrix, 0, -ratio, ratio, -1, 1, 3, 7);
         Matrix.frustumM(projectionMatrix, 0, 0, X_ORDER, 0, Y_RATIO, 3, 7);
-
     }
 
     @Override
     public void onDrawFrame(GL10 gl) {
         GLES20.glClear(GLES20.GL_COLOR_BUFFER_BIT);
 
-
         Matrix.setLookAtM(viewMatrix, 0, 0, 0, 3, 0f, 0f, 0f, 0f, 1.0f, 0.0f);
 
-        // Calculate the projection and view transformation
-        Matrix.multiplyMM(vPMatrix, 0, projectionMatrix, 0, viewMatrix, 0);
-
-
-        long time = SystemClock.uptimeMillis() % 4000L;
-        float angle = 0.090f * ((int) time);
-        // Matrix.setRotateM(rotationMatrix, 0, angle, 0, 0, -2.0f);
-
-
-        // float[] scratch = new float[16];
-        // Matrix.multiplyMM(scratch, 0, vPMatrix, 0, rotationMatrix, 0);
-
-
+        mTargetX = mX;
+        mTargetY = mY;
+        calculateCurrentPosition();
         // Draw shape
-        // mDemoTriangle.draw(scratch);
-        mRectangle.draw(viewMatrix, projectionMatrix, (int)mX, (int)mY,mAngle++, 1);
-        mRectangle2.draw(viewMatrix, projectionMatrix, 25,25, -mAngle++, 3);
-        // mSquad.draw(scratch);
-        // mDemoTriangle.draw();
+        mRectangle.draw(viewMatrix, projectionMatrix, mCurrentX, mCurrentY ,mAngle++, 1);
+        // mRectangle2.draw(viewMatrix, projectionMatrix, 25,25, -mAngle++, 3);
+
+        // mColoredFigure.draw(viewMatrix, projectionMatrix, 100, 100, 0, 1);
+    }
+
+    private void calculateCurrentPosition() {
+        if (mCurrentX == mTargetX && mCurrentY == mTargetY) {
+            return;
+        }
+
+        float length = (float) Math.sqrt(Math.pow(mCurrentX - mTargetX, 2) + Math.pow(mCurrentY - mTargetY, 2));
+        float moveRatio = length / mSpeed;
+        if (moveRatio < 1) {
+            mCurrentX = mTargetX;
+            mCurrentY = mTargetY;
+            return;
+        }
+
+        int sign = mCurrentX > mTargetX ? -1 : 1;
+        float pathLeft =  Math.abs(mCurrentX - mTargetX);
+        float step = pathLeft / moveRatio;
+        mCurrentX = pathLeft > step ?  mCurrentX + step * sign : mTargetX;
+
+        sign = mCurrentY > mTargetY ? -1 : 1;
+        pathLeft = Math.abs(mCurrentY - mTargetY);
+        step = pathLeft / moveRatio;
+        mCurrentY = pathLeft > step ? mCurrentY + step * sign : mTargetY;
+
     }
 }

@@ -17,8 +17,14 @@ import dagger.Component;
 @Singleton
 public interface AppComponent {
 
+    /**
+     * @return контекст приложения
+     */
     Context getContext();
 
+    /**
+     * @return создатель исполняемых программ OpenGl
+     */
     OpenGlProgramCreator getProgramCreator();
 
     @Component.Builder
