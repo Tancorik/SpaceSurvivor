@@ -1,4 +1,4 @@
-package com.tancorikworld.spacesurvivor.models.helpers
+package com.tancorikworld.spacesurvivor.models.demo.helpers
 
 /**
  * Класс содержит RGB значения цвета.

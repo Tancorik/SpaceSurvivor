@@ -6,11 +6,14 @@ import android.opengl.GLSurfaceView;
 import android.util.AttributeSet;
 import android.view.MotionEvent;
 
+import com.tancorikworld.spacesurvivor.presentation.renderers.DemoMainGameColoredRenderer;
 import com.tancorikworld.spacesurvivor.presentation.renderers.DemoRenderer;
 
 public class DemoScreenView extends GLSurfaceView {
 
     private final DemoRenderer mRenderer;
+    // private final DemoMainGameColoredRenderer mRenderer;
+
 
     public DemoScreenView(Context context) {
         this(context, null);
@@ -20,6 +23,7 @@ public class DemoScreenView extends GLSurfaceView {
         super(context, attrs);
         setEGLContextClientVersion(2);
         mRenderer = new DemoRenderer();
+        // mRenderer = new DemoMainGameColoredRenderer();
 
         setRenderer(mRenderer);
 

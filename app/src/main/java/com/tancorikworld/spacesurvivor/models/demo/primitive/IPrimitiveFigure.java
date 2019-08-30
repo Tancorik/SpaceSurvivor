@@ -1,4 +1,4 @@
-package com.tancorikworld.spacesurvivor.models.primitive;
+package com.tancorikworld.spacesurvivor.models.demo.primitive;
 
 /**
  * Интерфейс приметивной фигуры
@@ -15,7 +15,7 @@ public interface IPrimitiveFigure {
     * @param xPosition  положение по оси X
     * @param yPosition  положение по оси Y
     * @param angle      угол поворота фигуры
-    * @param xyScale    масштаб по двум осям
+    * @param xyScale    масштаб по двум осям //todo надо переделать на настраиваимую переменную
     */
    void draw(float[] vMatrix, float[] pMatrix, float xPosition, float yPosition, int angle, float xyScale);
 

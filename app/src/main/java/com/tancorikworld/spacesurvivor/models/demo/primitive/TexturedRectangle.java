@@ -1,4 +1,4 @@
-package com.tancorikworld.spacesurvivor.models.primitive;
+package com.tancorikworld.spacesurvivor.models.demo.primitive;
 
 import android.opengl.GLES20;
 import android.opengl.Matrix;
@@ -6,7 +6,7 @@ import android.opengl.Matrix;
 import androidx.annotation.NonNull;
 
 import com.tancorikworld.spacesurvivor.data.OpenGlProgramCreator;
-import com.tancorikworld.spacesurvivor.models.helpers.TextureArea;
+import com.tancorikworld.spacesurvivor.models.demo.helpers.TextureArea;
 
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -101,7 +101,7 @@ public class TexturedRectangle implements IPrimitiveFigure {
         GLES20.glEnableVertexAttribArray(textureLocation);
 
         // настраивем текстуру
-        GLES20.glActiveTexture(mTextureUnit);
+        // GLES20.glActiveTexture(mTextureUnit);
         GLES20.glBindTexture(GLES20.GL_TEXTURE_2D, mTexture);
         GLES20.glUniform1i(textureUnitLocation, 0);
 

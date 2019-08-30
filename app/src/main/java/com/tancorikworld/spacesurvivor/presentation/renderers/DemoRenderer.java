@@ -6,11 +6,15 @@ import android.opengl.Matrix;
 
 import com.tancorikworld.spacesurvivor.R;
 import com.tancorikworld.spacesurvivor.application.SpaceApplication;
-import com.tancorikworld.spacesurvivor.models.helpers.SimpleColor;
-import com.tancorikworld.spacesurvivor.models.helpers.TextureArea;
-import com.tancorikworld.spacesurvivor.models.primitive.ColoredFigure;
-import com.tancorikworld.spacesurvivor.models.primitive.IPrimitiveFigure;
-import com.tancorikworld.spacesurvivor.models.primitive.TexturedRectangle;
+import com.tancorikworld.spacesurvivor.models.demo.gameobjects.DemoGameObject;
+import com.tancorikworld.spacesurvivor.models.demo.gameobjects.DemoShells;
+import com.tancorikworld.spacesurvivor.models.demo.gameobjects.DemoWall;
+import com.tancorikworld.spacesurvivor.models.demo.gameobjects.abstractions.GameObject;
+import com.tancorikworld.spacesurvivor.models.demo.helpers.SimpleColor;
+import com.tancorikworld.spacesurvivor.models.demo.helpers.TextureArea;
+import com.tancorikworld.spacesurvivor.models.demo.primitive.ColoredFigure;
+import com.tancorikworld.spacesurvivor.models.demo.primitive.IPrimitiveFigure;
+import com.tancorikworld.spacesurvivor.models.demo.primitive.TexturedRectangle;
 import com.tancorikworld.spacesurvivor.utils.TextureUtils;
 
 import javax.microedition.khronos.egl.EGLConfig;
@@ -30,6 +34,10 @@ public class DemoRenderer implements GLSurfaceView.Renderer {
 
     private float Y_RATIO;
 
+    private GameObject mDemoGameObject;
+    private GameObject mDemoWall;
+    private GameObject mDemoShells;
+
     private TexturedRectangle mRectangle;
     private TexturedRectangle mRectangle2;
     private IPrimitiveFigure mColoredFigure;
@@ -42,10 +50,12 @@ public class DemoRenderer implements GLSurfaceView.Renderer {
 
     private volatile float mX;
     private volatile float mY;
+    private volatile boolean isNeedUpdateTargets = false;
 
     public void setCoord(float x, float y) {
         mX = x * mRatio;
         mY = Y_RATIO - y * mRatio;
+        isNeedUpdateTargets = true;
     }
 
     @Override
@@ -61,11 +71,15 @@ public class DemoRenderer implements GLSurfaceView.Renderer {
 
         mRectangle = new TexturedRectangle(50, 50, mTexture, GLES20.GL_TEXTURE0, new TextureArea(0f,0f, 1f, 1f),
                 SpaceApplication.getAppComponent().getProgramCreator());
-        mRectangle2 = new TexturedRectangle(50, 50, mTexture, GLES20.GL_TEXTURE0, new TextureArea(0f,0f, 0.5f, 0.5f),
-                SpaceApplication.getAppComponent().getProgramCreator());
+        // mRectangle2 = new TexturedRectangle(50, 50, mTexture, GLES20.GL_TEXTURE0, new TextureArea(0f,0f, 0.5f, 0.5f),
+        //         SpaceApplication.getAppComponent().getProgramCreator());
 
         mColoredFigure = new ColoredFigure(10, 48, new SimpleColor(1f, 0f, 0f),
                 SpaceApplication.getAppComponent().getProgramCreator());
+
+        mDemoGameObject = new DemoGameObject(SpaceApplication.getAppComponent().getProgramCreator(), 300, 200, 0);
+        mDemoWall = new DemoWall(SpaceApplication.getAppComponent().getProgramCreator(), 500, 200, 0);
+        mDemoShells = new DemoShells(SpaceApplication.getAppComponent().getProgramCreator(), 300, 200, 0);
     }
 
     @Override
@@ -88,9 +102,19 @@ public class DemoRenderer implements GLSurfaceView.Renderer {
         mTargetY = mY;
         calculateCurrentPosition();
         // Draw shape
-        mRectangle.draw(viewMatrix, projectionMatrix, mCurrentX, mCurrentY ,mAngle++, 1);
-        // mRectangle2.draw(viewMatrix, projectionMatrix, 25,25, -mAngle++, 3);
+        if (isNeedUpdateTargets) {
+            mDemoGameObject.updateTarget(mTargetX, mTargetY);
+            mDemoShells.updateTarget(mTargetX, mTargetY);
+            isNeedUpdateTargets = false;
+        }
 
+        mDemoShells.redraw(viewMatrix, projectionMatrix);
+        mDemoGameObject.redraw(viewMatrix, projectionMatrix);
+        mDemoWall.redraw(viewMatrix, projectionMatrix);
+
+        // mRectangle.draw(viewMatrix, projectionMatrix, mCurrentX, mCurrentY ,mAngle++, 1);
+
+        // mRectangle2.draw(viewMatrix, projectionMatrix, 25,25, -mAngle++, 3);
         // mColoredFigure.draw(viewMatrix, projectionMatrix, 100, 100, 0, 1);
     }
 
