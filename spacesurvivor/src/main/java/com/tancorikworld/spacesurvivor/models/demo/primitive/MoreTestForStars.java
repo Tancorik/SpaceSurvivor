@@ -1,0 +1,139 @@
+package com.tancorikworld.spacesurvivor.models.demo.primitive;
+
+import android.opengl.GLES20;
+import android.opengl.Matrix;
+
+import androidx.annotation.NonNull;
+
+import com.tancorikworld.spacesurvivor.models.demo.helpers.CoordinatesXY;
+import com.tancorikworld.spacesurvivor.models.demo.helpers.SimpleColor;
+
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+import java.util.List;
+
+import static com.tancorikworld.spacesurvivor.core.graphicscorelib.data.OpenGlProgramCreator.ATTRIBUTE_VERTEX_POSITION_NAME;
+import static com.tancorikworld.spacesurvivor.core.graphicscorelib.data.OpenGlProgramCreator.FRAGMENT_COLOR_NAME;
+import static com.tancorikworld.spacesurvivor.core.graphicscorelib.data.OpenGlProgramCreator.VERTEX_MATRIX_NAME;
+
+public class MoreTestForStars {
+
+    private static final int VERTEX_AXIS = 2;
+
+    private final List<CoordinatesXY> mXYList = new ArrayList<>();
+    private final int mProgram;
+    private final float[] mColor = new float[4];
+    private FloatBuffer mVertexData;
+    private int mVertexCount;
+    private final int mStarsCount;
+
+    public MoreTestForStars(int radius, int innerRadius, int vertexCount, int starsCount, int program, @NonNull SimpleColor simpleColor) {
+        mColor[0] = simpleColor.getRed();
+        mColor[1] = simpleColor.getGreen();
+        mColor[2] = simpleColor.getBlue();
+        mColor[3] = simpleColor.getAlpha();
+        mStarsCount = starsCount;
+        mProgram = program;
+
+    }
+
+    public void draw(@NonNull float[] vMatrix, @NonNull float[] pMatrix, float width, float height) {
+        if (mVertexData == null) {
+            createVertexData(15, 5, 4, width, height);
+        }
+
+        GLES20.glUseProgram(mProgram);
+
+        // получить ссылки на необходимые параметры программы
+        int verticesLocation = GLES20.glGetAttribLocation(mProgram, ATTRIBUTE_VERTEX_POSITION_NAME);
+        int colorLocation = GLES20.glGetUniformLocation(mProgram, FRAGMENT_COLOR_NAME);
+        int vPMatrixHandle = GLES20.glGetUniformLocation(mProgram, VERTEX_MATRIX_NAME);
+
+        // включить массив точек
+        GLES20.glEnableVertexAttribArray(verticesLocation);
+        GLES20.glVertexAttribPointer(verticesLocation, VERTEX_AXIS, GLES20.GL_FLOAT, false, 0, mVertexData);
+
+        // единичим матрицу
+        float[] modelMatrix = new float[16];
+
+            Matrix.setIdentityM(modelMatrix, 0);
+
+            // применяем необходимые изменения к модельке
+            Matrix.translateM(modelMatrix, 0, 0, 0, 0);
+            Matrix.scaleM(modelMatrix, 0, 1, 1, 1f);
+            Matrix.rotateM(modelMatrix, 0, 0, 0, 0, 1);
+
+            // складываем матрицы в одну, учитывая матрицу view и матрицу проекции
+            float[] scratch = new float[16];
+            Matrix.multiplyMM(scratch, 0, vMatrix, 0, modelMatrix, 0);
+            Matrix.multiplyMM(scratch, 0, pMatrix, 0, scratch, 0);
+
+            // применить суммарную матрицу
+            GLES20.glUniformMatrix4fv(vPMatrixHandle, 1, false, scratch, 0);
+
+            // установить цвет фигуры
+            GLES20.glUniform4fv(colorLocation, 1, mColor, 0);
+
+            // рисовать многоугольник
+            // for (int i = 0; i < mStarsCount; i++) {
+            GLES20.glDrawArrays(GLES20.GL_TRIANGLE_FAN, 0 , mVertexCount);
+            // }
+
+        // выключить массив точек
+        GLES20.glDisableVertexAttribArray(verticesLocation);
+    }
+
+    private void createVertexData(int radius, int innerRadius, int vertexCount, float width, float height) {
+        calculateCoordinate(width, height);
+        float[] vertices = calculateStars(radius, innerRadius, vertexCount);
+        mVertexCount = vertices.length * 2;
+        mVertexData = ByteBuffer.allocateDirect(vertices.length * 4).order(ByteOrder.nativeOrder()).asFloatBuffer();
+        mVertexData.put(vertices);
+        mVertexData.position(0);
+    }
+
+    private float[] calculateStars(float radius, float innerRadius, int starsVertex) {
+        int countVertex = starsVertex * 2;
+        float specificRadius;
+        List<float[]> floats = new ArrayList<>(mStarsCount);
+        for (int stars = 0; stars < mStarsCount; stars++) {
+            float xN = mXYList.get(stars).getValueX();
+            float yN = mXYList.get(stars).getValueY();
+            float[] result = new float[countVertex * 2 + 4];
+            // первая точка в начале координат
+            result[0] = xN;
+            result[1] = yN;
+            for (int i = 0; i < countVertex; i++) {
+                double angle = 2 * Math.PI / countVertex * i;
+                specificRadius = i % 2f == 0 ? radius : innerRadius;
+                double x = specificRadius * Math.cos(angle);
+                int sign = angle >= Math.PI ? -1 : 1;
+                double y = sign * Math.sqrt(Math.pow(specificRadius, 2) - Math.pow(x, 2));
+                result[2 + i * 2] = (float) x + xN;
+                result[2 + i * 2 + 1] = (float) y + yN * sign;
+                // последняя точка звезды должна совпадать с первой (не нулевой)
+                if (i == 0) {
+                    result[result.length - 2] = (float) x + xN;
+                    result[result.length - 1] = (float) y + yN * sign;
+                }
+            }
+            floats.add(result);
+        }
+        int size = countVertex * 2 + 4;
+        float[] result = new float[mStarsCount * size];
+        for (int stars = 0; stars < mStarsCount; stars++) {
+            for (int i = 0; i < countVertex * 2 + 4; i++) {
+                result[size * stars + i] = floats.get(stars)[i];
+            }
+        }
+        return result;
+    }
+
+    private void calculateCoordinate(float width, float height) {
+        for (int i = 0; i < mStarsCount; i++) {
+            mXYList.add(new CoordinatesXY((float) Math.random() * width, (float) Math.random() * height));
+        }
+    }
+}
